@@ -13,6 +13,8 @@ function install_spinw()
 %     return
 % end
 
+newline = char(10);
+
 % remove old SpinW installation from path
 fprintf('\nRemoving path to old SpinW installation if exists!\n')
 try %#ok<TRYNC>
@@ -25,7 +27,7 @@ folName = fileparts(mfilename('fullpath'));
 % adding new path
 fprintf('Adding path to new SpinW installation: %s!\n',folName);
 ww = warning;
-warning('off'); %#ok<WNOFF>
+warning('off');
 addpath(genpath(folName));
 warning(ww);
 
@@ -42,14 +44,30 @@ if ~verLessThan('matlab', '8.1')
     for ii = 1:numel(fList)
         delete([folName filesep 'external' filesep fList(ii).name]);
     end
+    % gobjects()
+    fList = dir([folName filesep 'external' filesep 'gobjects*']);
+    for ii = 1:numel(fList)
+        delete([folName filesep 'external' filesep fList(ii).name]);
+    end
+
 else
     % rename the functions to be used in Matlab versions prior to R2014a
     % strjoin()
-    movefile([folName filesep 'external' filesep 'strjoin0.m'],...
-        [folName filesep 'external' filesep 'strjoin.m']);
+    try %#ok<*TRYNC>
+        movefile([folName filesep 'external' filesep 'strjoin0.m'],...
+            [folName filesep 'external' filesep 'strjoin.m']);
+    end
     % strsplit()
-    movefile([folName filesep 'external' filesep 'strsplit0.m'],...
-        [folName filesep 'external' filesep 'strsplit.m']);
+    try
+        movefile([folName filesep 'external' filesep 'strsplit0.m'],...
+            [folName filesep 'external' filesep 'strsplit.m']);
+    end
+    % gobjects()
+    try
+        movefile([folName filesep 'external' filesep 'gobjects0.m'],...
+            [folName filesep 'external' filesep 'gobjects.m']);
+    end
+
 end
 
 % functions introduced in R2015a
@@ -69,12 +87,12 @@ fprintf('  addpath(genpath(''%s''));\n',folName);
 sfLoc = which('startup');
 uPath = userpath;
 % remove ':' and ';' characters from the userpath
-uPath = [uPath(~ismember(uPath,':;')) filesep 'startup.m'];
+uPath = [uPath(~ismember(uPath,';')) filesep 'startup.m'];
 
 % create new startup.m file
 if isempty(sfLoc)
     answer = getinput(sprintf(['You don''t have a Matlab startup.m file,\n'...
-        'do you want it to be created at %s? (y/n)'],uPath),'yn');
+        'do you want it to be created at %s? (y/n)'],esc(uPath)),'yn');
     if answer == 'y'
         fclose(fopen(uPath,'w'));
         sfLoc = uPath;
@@ -83,14 +101,14 @@ end
 
 if ~isempty(sfLoc)
     
-    answer = getinput(sprintf(['Would you like to add the following line:\n'...
-        sprintf('addpath(genpath(''%s''));',folName) '\nto the end of '...
-        'your Matlab startup file (%s)? (y/n)'],sfLoc),'yn');
+    answer = getinput(['Would you like to add the following line:' newline...
+        'addpath(genpath('''  esc(folName) '''));' newline 'to the end of '...
+        'your Matlab startup file (' esc(sfLoc) ')? (y/n)'],'yn');
     
     if answer == 'y'
         fid = fopen(sfLoc,'a');
         fprintf(fid,['\n%%###SW_UPDATE\n%% Path to the SpinW installation\n'...
-            'addpath(genpath(''%s''));\n%%###SW_UPDATE\n'],folName);
+            'addpath(genpath('''  esc(folName) '''));\n%%###SW_UPDATE\n']);
         fclose(fid);
     end
 end
@@ -110,6 +128,13 @@ end
 
 
 disp('The installation of SpinW was successful!')
+
+end
+
+function str = esc(str)
+% escape \ characters
+
+str = regexprep(str,'\\','\\\\');
 
 end
 

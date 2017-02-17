@@ -1,4 +1,4 @@
-function [V,D] = eigorth(M, tol, sortMode, useMex)
+function [V,D, warnOut] = eigorth(M, tol, sortMode, useMex)
 % orthogonal eigenvectors of defective eigenvalues
 % [V, D, {Idx}] = EIGORTH(M, tol, sort, useMex)
 %
@@ -26,8 +26,12 @@ function [V,D] = eigorth(M, tol, sortMode, useMex)
 %
 
 if nargin == 0
-    help eigorth;
-    return;
+    help eigorth
+    return
+end
+
+if nargout>2
+    warnOut = false;
 end
 
 if nargin < 2
@@ -46,13 +50,15 @@ nMat   = size(M,1);
 nStack = size(M,3);
 
 % Use OpenMP parallelised mex file if it exists
-if nStack>1 && useMex && exist('eig_omp','file')==3
+%if nStack>1 && useMex && exist('eig_omp','file')==3
+% check existence of mex files outside of this function
+if nStack>1 && useMex
     if sortMode
         [V, D] = eigenshuffle(M,useMex,'orth');
     else
         [V, D] = eig_omp(M,'orth');
     end
-    return;
+    return
 end
 
 if sortMode
@@ -91,8 +97,14 @@ for jj = 1:nStack
         V(:,:,jj) = Vi;
     catch %#ok<CTCH>
         % if there are not enough orthogonal vector, skip the orthogonalisation
-        warning('eigorth:Error','Eigenvectors of defective eigenvalues cannot be orthogonalised!');
+        if nargout>2
+            % catch warning
+            warnOut = true;
+        else
+            warning('eigorth:NoOrth','Eigenvectors of defective eigenvalues cannot be orthogonalised!');
+        end
     end
 end
+
 
 end
