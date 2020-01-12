@@ -653,7 +653,7 @@ if param.gtensor
     end
 end
 
-hklIdx = [floor(((1:nSlice)-1)/nSlice*nHkl)+1 nHkl+1];
+hklIdx = [floor(((1:nSlice)-1)/nSlice*nHkl+1E-7)+1 nHkl+1];
 
 % Empty omega dispersion of all spin wave modes, size: 2*nMagExt x nHkl.
 omega = zeros(2*nMagExt,0);
